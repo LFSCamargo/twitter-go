@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	userModel "github.com/LFSCamargo/graphql-go-boilerplate/database/models/user"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/services/user"
+	userModel "github.com/LFSCamargo/twitter-go/database/models/user"
+	"github.com/LFSCamargo/twitter-go/graph/services/user"
 )
 
 var userCtxKey = &contextKey{"user"}

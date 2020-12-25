@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/LFSCamargo/graphql-go-boilerplate/constants"
-	userModel "github.com/LFSCamargo/graphql-go-boilerplate/database/models/user"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/model"
+	"github.com/LFSCamargo/twitter-go/constants"
+	userModel "github.com/LFSCamargo/twitter-go/database/models/user"
+	"github.com/LFSCamargo/twitter-go/graph/model"
 	"github.com/dgrijalva/jwt-go"
 )
 

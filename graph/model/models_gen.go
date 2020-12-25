@@ -2,6 +2,10 @@
 
 package model
 
+type CreateTweet struct {
+	Text string `json:"text"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -16,6 +20,13 @@ type RegisterInput struct {
 
 type TokenOutput struct {
 	Token string `json:"token"`
+}
+
+type Tweet struct {
+	ID    string  `json:"id"`
+	Text  string  `json:"text"`
+	User  *User   `json:"user"`
+	Likes []*User `json:"likes"`
 }
 
 type User struct {

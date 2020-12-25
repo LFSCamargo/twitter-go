@@ -7,10 +7,10 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/LFSCamargo/graphql-go-boilerplate/auth"
-	"github.com/LFSCamargo/graphql-go-boilerplate/database"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/generated"
+	"github.com/LFSCamargo/twitter-go/auth"
+	"github.com/LFSCamargo/twitter-go/database"
+	"github.com/LFSCamargo/twitter-go/graph"
+	"github.com/LFSCamargo/twitter-go/graph/generated"
 	"github.com/go-chi/chi"
 )
 

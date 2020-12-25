@@ -1,4 +1,4 @@
-module github.com/LFSCamargo/graphql-go-boilerplate
+module github.com/LFSCamargo/twitter-go
 
 go 1.15
 

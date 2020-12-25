@@ -1,7 +1,7 @@
 package userModel
 
 import (
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/model"
+	"github.com/LFSCamargo/twitter-go/graph/model"
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"

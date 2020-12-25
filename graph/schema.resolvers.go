@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/LFSCamargo/graphql-go-boilerplate/auth"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/generated"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/model"
-	"github.com/LFSCamargo/graphql-go-boilerplate/graph/services/user"
+	"github.com/LFSCamargo/twitter-go/auth"
+	"github.com/LFSCamargo/twitter-go/graph/generated"
+	"github.com/LFSCamargo/twitter-go/graph/model"
+	"github.com/LFSCamargo/twitter-go/graph/services/user"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input *model.LoginInput) (*model.TokenOutput, error) {

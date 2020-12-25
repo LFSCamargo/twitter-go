@@ -1,8 +1,19 @@
+type Tweet {
+  id: ID!
+  text: String!
+  user: User!
+  likes: [User!]!
+}
+
 type User {
   id: ID!
   username: String!
   email: String!
   picture: String!
+}
+
+input CreateTweet {
+  text: String!
 }
 
 input RegisterInput {
