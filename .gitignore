@@ -1,0 +1,5 @@
+# Mac os DS_Store
+.DS_Store
+
+# Ignores the server binary file
+server
