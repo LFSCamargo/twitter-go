@@ -12,6 +12,7 @@ import (
 	"github.com/LFSCamargo/twitter-go/graph"
 	"github.com/LFSCamargo/twitter-go/graph/generated"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/httplog"
 )
 
 const defaultPort = "8000"
@@ -22,12 +23,16 @@ func main() {
 		port = defaultPort
 	}
 
+	logger := httplog.NewLogger("twitter-go-logging", httplog.Options{
+		JSON: true,
+	})
+
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
 	database.Connect()
 
 	router := chi.NewRouter()
-
+	router.Use(httplog.RequestLogger(logger))
 	router.Use(auth.Middleware())
 	router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", srv)
