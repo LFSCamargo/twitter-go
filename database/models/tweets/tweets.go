@@ -37,7 +37,7 @@ func CreateNewTweet(tweet model.CreateTweet, userID string) (*Tweet, error) {
 }
 
 // DeleteTweet - it marks a tweet that already got created as active = false
-func DeleteTweet(id string, user userModel.User) error {
+func DeleteTweet(id string, user *userModel.User) error {
 	tweet := &Tweet{}
 	coll := mgm.Coll(tweet)
 	findErr := coll.FindByID(id, tweet)
