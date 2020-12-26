@@ -49,7 +49,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddReply    func(childComplexity int, input model.CreateTweet) int
-		CreateTweet func(childComplexity int, input model.CreateTweet) int
+		CreateTweet func(childComplexity int, input model.CreateTweet, tweet string) int
 		DeleteReply func(childComplexity int, input string) int
 		DeleteTweet func(childComplexity int, id string) int
 		LikeTweet   func(childComplexity int, id string) int
@@ -111,7 +111,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error)
 	AddReply(ctx context.Context, input model.CreateTweet) (*model.Reply, error)
 	DeleteReply(ctx context.Context, input string) (*model.MessageOutput, error)
-	CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error)
+	CreateTweet(ctx context.Context, input model.CreateTweet, tweet string) (*model.Tweet, error)
 	DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error)
 	LikeTweet(ctx context.Context, id string) (*model.Tweet, error)
 }
@@ -167,7 +167,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateTweet(childComplexity, args["input"].(model.CreateTweet)), true
+		return e.complexity.Mutation.CreateTweet(childComplexity, args["input"].(model.CreateTweet), args["tweet"].(string)), true
 
 	case "Mutation.deleteReply":
 		if e.complexity.Mutation.DeleteReply == nil {
@@ -550,14 +550,14 @@ type Mutation {
   register(input: RegisterInput!): TokenOutput
   addReply(input: CreateTweet!): Reply
   deleteReply(input: ID!): MessageOutput
-  createTweet(input: CreateTweet!): Tweet
+  createTweet(input: CreateTweet!, tweet: ID!): Tweet
   deleteTweet(id: ID!): MessageOutput
   likeTweet(id: ID!): Tweet
 }
 
 type Query {
   me: User!
-  replies(input: PaginationInput, id: String!): RepliesPaginationOutput
+  replies(input: PaginationInput, id: ID!): RepliesPaginationOutput
   reply(id: String!): Reply
   tweets(input: PaginationInput): TweetsPaginationOutput
   tweet(id: String!): Tweet
@@ -597,6 +597,15 @@ func (ec *executionContext) field_Mutation_createTweet_args(ctx context.Context,
 		}
 	}
 	args["input"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["tweet"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tweet"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tweet"] = arg1
 	return args, nil
 }
 
@@ -705,7 +714,7 @@ func (ec *executionContext) field_Query_replies_args(ctx context.Context, rawArg
 	var arg1 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1013,7 +1022,7 @@ func (ec *executionContext) _Mutation_createTweet(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateTweet(rctx, args["input"].(model.CreateTweet))
+		return ec.resolvers.Mutation().CreateTweet(rctx, args["input"].(model.CreateTweet), args["tweet"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

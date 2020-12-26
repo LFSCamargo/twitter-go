@@ -31,7 +31,7 @@ func (r *mutationResolver) DeleteReply(ctx context.Context, input string) (*mode
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error) {
+func (r *mutationResolver) CreateTweet(ctx context.Context, input model.CreateTweet, tweet string) (*model.Tweet, error) {
 	return tweets.CreateTweet(ctx, input)
 }
 
