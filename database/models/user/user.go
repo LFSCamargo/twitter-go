@@ -17,7 +17,7 @@ type User struct {
 }
 
 // CreateNewUser - creates a new user inside the database using the mgm
-func CreateNewUser(user *model.RegisterInput) (*User, error) {
+func CreateNewUser(user model.RegisterInput) (*User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -44,4 +44,13 @@ func FindByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+// FindByID - Finds a user by id
+func FindByID(id string) (*User, error) {
+	user := &User{}
+	coll := mgm.Coll(user)
+	err := coll.FindByID(id, user)
+
+	return user, err
 }
