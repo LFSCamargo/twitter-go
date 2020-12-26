@@ -11,6 +11,19 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type MessageOutput struct {
+	Message string `json:"message"`
+}
+
+type PageInfo struct {
+	PageSize    int  `json:"pageSize"`
+	HasNextPage bool `json:"hasNextPage"`
+}
+
+type PaginationInput struct {
+	First int `json:"first"`
+}
+
 type RegisterInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -27,6 +40,11 @@ type Tweet struct {
 	Text  string  `json:"text"`
 	User  *User   `json:"user"`
 	Likes []*User `json:"likes"`
+}
+
+type TweetsPaginationOutput struct {
+	PageInfo *PageInfo `json:"pageInfo"`
+	Tweets   []*Tweet  `json:"tweets"`
 }
 
 type User struct {

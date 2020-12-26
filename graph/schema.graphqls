@@ -1,3 +1,8 @@
+type PageInfo {
+  pageSize: Int!
+  hasNextPage: Boolean!
+}
+
 type Tweet {
   id: ID!
   text: String!
@@ -28,15 +33,32 @@ input LoginInput {
   password: String!
 }
 
+input PaginationInput {
+  first: Int!
+}
+
 type TokenOutput {
   token: String!
 }
 
+type MessageOutput {
+  message: String!
+}
+
+type TweetsPaginationOutput {
+  pageInfo: PageInfo!
+  tweets: [Tweet!]!
+}
+
 type Mutation {
-  login(input: LoginInput): TokenOutput
-  register(input: RegisterInput): TokenOutput
+  login(input: LoginInput!): TokenOutput
+  register(input: RegisterInput!): TokenOutput
+  createTweet(input: CreateTweet!): Tweet
+  deleteTweet(id: ID!): MessageOutput
 }
 
 type Query {
   me: User!
+  tweets(input: PaginationInput): TweetsPaginationOutput
+  tweet(id: String!): Tweet
 }

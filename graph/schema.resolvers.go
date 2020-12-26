@@ -10,17 +10,24 @@ import (
 	"github.com/LFSCamargo/twitter-go/auth"
 	"github.com/LFSCamargo/twitter-go/graph/generated"
 	"github.com/LFSCamargo/twitter-go/graph/model"
+	"github.com/LFSCamargo/twitter-go/graph/services/tweets"
 	"github.com/LFSCamargo/twitter-go/graph/services/user"
 )
 
-func (r *mutationResolver) Login(ctx context.Context, input *model.LoginInput) (*model.TokenOutput, error) {
-	tokenOut, err := user.LoginUser(input)
-	return tokenOut, err
+func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.TokenOutput, error) {
+	return user.LoginUser(input)
 }
 
-func (r *mutationResolver) Register(ctx context.Context, input *model.RegisterInput) (*model.TokenOutput, error) {
-	tokenOut, err := user.RegisterNewUser(input)
-	return tokenOut, err
+func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error) {
+	return user.RegisterNewUser(input)
+}
+
+func (r *mutationResolver) CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error) {
+	return tweets.CreateTweet(ctx, input)
+}
+
+func (r *mutationResolver) DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error) {
+	return tweets.DeleteTweet(ctx, id)
 }
 
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
@@ -32,8 +39,16 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		Email:    user.Email,
 		Username: user.Username,
 		Picture:  user.Picture,
-		ID:       user.ID.String(),
+		ID:       user.ID.Hex(),
 	}, nil
+}
+
+func (r *queryResolver) Tweets(ctx context.Context, input *model.PaginationInput) (*model.TweetsPaginationOutput, error) {
+	return tweets.GetTweets(ctx, input)
+}
+
+func (r *queryResolver) Tweet(ctx context.Context, id string) (*model.Tweet, error) {
+	return tweets.GetTweet(ctx, id)
 }
 
 // Mutation returns generated.MutationResolver implementation.
