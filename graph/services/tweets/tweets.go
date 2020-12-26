@@ -42,7 +42,7 @@ func DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error) {
 	if user == nil {
 		return nil, errors.New(constants.NotLogged)
 	}
-	err := tweetModel.DeleteTweet(id)
+	err := tweetModel.DeleteTweet(id, user)
 	if err != nil {
 		return nil, errors.New(constants.InternalServerError)
 	}
