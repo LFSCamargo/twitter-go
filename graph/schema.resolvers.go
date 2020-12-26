@@ -30,6 +30,10 @@ func (r *mutationResolver) DeleteTweet(ctx context.Context, id string) (*model.M
 	return tweets.DeleteTweet(ctx, id)
 }
 
+func (r *mutationResolver) LikeTweet(ctx context.Context, id string) (*model.Tweet, error) {
+	return tweets.LikeTweet(ctx, id)
+}
+
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	user := auth.ForContext(ctx)
 	if user == nil {

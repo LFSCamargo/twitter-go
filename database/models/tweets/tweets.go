@@ -7,6 +7,7 @@ import (
 	"github.com/LFSCamargo/twitter-go/constants"
 	userModel "github.com/LFSCamargo/twitter-go/database/models/user"
 	"github.com/LFSCamargo/twitter-go/graph/model"
+	"github.com/LFSCamargo/twitter-go/utils/array"
 	"github.com/kamva/mgm/v3"
 	"github.com/kamva/mgm/v3/operator"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,6 +21,33 @@ type Tweet struct {
 	User             string   `json:"user" bson:"user"`
 	Likes            []string `json:"likes" bson:"likes"`
 	Active           bool     `json:"active" bson:"active"`
+}
+
+// LikeTweet - adds another person like to the tweet
+func LikeTweet(tweetID string, userID string) (*Tweet, error) {
+	tweet := &Tweet{}
+	coll := mgm.Coll(tweet)
+	findErr := coll.FindByID(tweetID, tweet)
+
+	if findErr != nil {
+		return nil, errors.New(constants.NotFound)
+	}
+
+	_, found := array.FindItem(tweet.Likes, userID)
+
+	if found {
+		tweet.Likes = array.RemoveItem(tweet.Likes, userID)
+	} else {
+		tweet.Likes = append(tweet.Likes, userID)
+	}
+
+	updateErr := mgm.Coll(tweet).Update(tweet)
+
+	if updateErr != nil {
+		return nil, errors.New(constants.InternalServerError)
+	}
+
+	return GetTweet(tweetID)
 }
 
 // CreateNewTweet - it creates a new tweet inside the database

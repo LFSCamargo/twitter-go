@@ -55,6 +55,7 @@ type Mutation {
   register(input: RegisterInput!): TokenOutput
   createTweet(input: CreateTweet!): Tweet
   deleteTweet(id: ID!): MessageOutput
+  likeTweet(id: ID!): Tweet
 }
 
 type Query {
