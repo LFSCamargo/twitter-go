@@ -3,6 +3,13 @@ type PageInfo {
   hasNextPage: Boolean!
 }
 
+type Reply {
+  id: ID!
+  text: String!
+  user: String!
+  likes: [User!]!
+}
+
 type Tweet {
   id: ID!
   text: String!
@@ -50,9 +57,16 @@ type TweetsPaginationOutput {
   tweets: [Tweet!]!
 }
 
+type RepliesPaginationOutput {
+  pageInfo: PageInfo!
+  tweets: [Reply!]!
+}
+
 type Mutation {
   login(input: LoginInput!): TokenOutput
   register(input: RegisterInput!): TokenOutput
+  addReply(input: CreateTweet!): Reply
+  deleteReply(input: ID!): MessageOutput
   createTweet(input: CreateTweet!): Tweet
   deleteTweet(id: ID!): MessageOutput
   likeTweet(id: ID!): Tweet
@@ -60,6 +74,8 @@ type Mutation {
 
 type Query {
   me: User!
+  replies(input: PaginationInput, id: String!): RepliesPaginationOutput
+  reply(id: String!): Reply
   tweets(input: PaginationInput): TweetsPaginationOutput
   tweet(id: String!): Tweet
 }

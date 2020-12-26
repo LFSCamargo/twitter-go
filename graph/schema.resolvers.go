@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/LFSCamargo/twitter-go/auth"
 	"github.com/LFSCamargo/twitter-go/graph/generated"
@@ -20,6 +21,14 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error) {
 	return user.RegisterNewUser(input)
+}
+
+func (r *mutationResolver) AddReply(ctx context.Context, input model.CreateTweet) (*model.Reply, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteReply(ctx context.Context, input string) (*model.MessageOutput, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error) {
@@ -45,6 +54,14 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		Picture:  user.Picture,
 		ID:       user.ID.Hex(),
 	}, nil
+}
+
+func (r *queryResolver) Replies(ctx context.Context, input *model.PaginationInput, id string) (*model.RepliesPaginationOutput, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) Reply(ctx context.Context, id string) (*model.Reply, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) Tweets(ctx context.Context, input *model.PaginationInput) (*model.TweetsPaginationOutput, error) {
