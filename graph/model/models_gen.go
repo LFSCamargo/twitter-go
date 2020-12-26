@@ -33,13 +33,13 @@ type RegisterInput struct {
 
 type RepliesPaginationOutput struct {
 	PageInfo *PageInfo `json:"pageInfo"`
-	Tweets   []*Reply  `json:"tweets"`
+	Replies  []*Reply  `json:"replies"`
 }
 
 type Reply struct {
 	ID    string  `json:"id"`
 	Text  string  `json:"text"`
-	User  string  `json:"user"`
+	User  *User   `json:"user"`
 	Likes []*User `json:"likes"`
 }
 

@@ -6,7 +6,7 @@ type PageInfo {
 type Reply {
   id: ID!
   text: String!
-  user: String!
+  user: User!
   likes: [User!]!
 }
 
@@ -59,7 +59,7 @@ type TweetsPaginationOutput {
 
 type RepliesPaginationOutput {
   pageInfo: PageInfo!
-  tweets: [Reply!]!
+  replies: [Reply!]!
 }
 
 type Mutation {

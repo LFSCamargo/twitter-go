@@ -72,7 +72,7 @@ type ComplexityRoot struct {
 
 	RepliesPaginationOutput struct {
 		PageInfo func(childComplexity int) int
-		Tweets   func(childComplexity int) int
+		Replies  func(childComplexity int) int
 	}
 
 	Reply struct {
@@ -305,12 +305,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RepliesPaginationOutput.PageInfo(childComplexity), true
 
-	case "RepliesPaginationOutput.tweets":
-		if e.complexity.RepliesPaginationOutput.Tweets == nil {
+	case "RepliesPaginationOutput.replies":
+		if e.complexity.RepliesPaginationOutput.Replies == nil {
 			break
 		}
 
-		return e.complexity.RepliesPaginationOutput.Tweets(childComplexity), true
+		return e.complexity.RepliesPaginationOutput.Replies(childComplexity), true
 
 	case "Reply.id":
 		if e.complexity.Reply.ID == nil {
@@ -489,7 +489,7 @@ var sources = []*ast.Source{
 type Reply {
   id: ID!
   text: String!
-  user: String!
+  user: User!
   likes: [User!]!
 }
 
@@ -542,7 +542,7 @@ type TweetsPaginationOutput {
 
 type RepliesPaginationOutput {
   pageInfo: PageInfo!
-  tweets: [Reply!]!
+  replies: [Reply!]!
 }
 
 type Mutation {
@@ -1481,7 +1481,7 @@ func (ec *executionContext) _RepliesPaginationOutput_pageInfo(ctx context.Contex
 	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RepliesPaginationOutput_tweets(ctx context.Context, field graphql.CollectedField, obj *model.RepliesPaginationOutput) (ret graphql.Marshaler) {
+func (ec *executionContext) _RepliesPaginationOutput_replies(ctx context.Context, field graphql.CollectedField, obj *model.RepliesPaginationOutput) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1499,7 +1499,7 @@ func (ec *executionContext) _RepliesPaginationOutput_tweets(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Tweets, nil
+		return obj.Replies, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1616,9 +1616,9 @@ func (ec *executionContext) _Reply_user(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reply_likes(ctx context.Context, field graphql.CollectedField, obj *model.Reply) (ret graphql.Marshaler) {
@@ -3451,8 +3451,8 @@ func (ec *executionContext) _RepliesPaginationOutput(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "tweets":
-			out.Values[i] = ec._RepliesPaginationOutput_tweets(ctx, field, obj)
+		case "replies":
+			out.Values[i] = ec._RepliesPaginationOutput_replies(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
