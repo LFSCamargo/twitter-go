@@ -50,6 +50,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateTweet func(childComplexity int, input model.CreateTweet) int
 		DeleteTweet func(childComplexity int, id string) int
+		LikeTweet   func(childComplexity int, id string) int
 		Login       func(childComplexity int, input model.LoginInput) int
 		Register    func(childComplexity int, input model.RegisterInput) int
 	}
@@ -94,6 +95,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error)
 	CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error)
 	DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error)
+	LikeTweet(ctx context.Context, id string) (*model.Tweet, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -146,6 +148,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteTweet(childComplexity, args["id"].(string)), true
+
+	case "Mutation.likeTweet":
+		if e.complexity.Mutation.LikeTweet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likeTweet_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikeTweet(childComplexity, args["id"].(string)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -414,6 +428,7 @@ type Mutation {
   register(input: RegisterInput!): TokenOutput
   createTweet(input: CreateTweet!): Tweet
   deleteTweet(id: ID!): MessageOutput
+  likeTweet(id: ID!): Tweet
 }
 
 type Query {
@@ -445,6 +460,21 @@ func (ec *executionContext) field_Mutation_createTweet_args(ctx context.Context,
 }
 
 func (ec *executionContext) field_Mutation_deleteTweet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likeTweet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -761,6 +791,45 @@ func (ec *executionContext) _Mutation_deleteTweet(ctx context.Context, field gra
 	res := resTmp.(*model.MessageOutput)
 	fc.Result = res
 	return ec.marshalOMessageOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐMessageOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_likeTweet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_likeTweet_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikeTweet(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Tweet)
+	fc.Result = res
+	return ec.marshalOTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_pageSize(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
@@ -2659,6 +2728,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_createTweet(ctx, field)
 		case "deleteTweet":
 			out.Values[i] = ec._Mutation_deleteTweet(ctx, field)
+		case "likeTweet":
+			out.Values[i] = ec._Mutation_likeTweet(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

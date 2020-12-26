@@ -64,3 +64,16 @@ func CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, er
 
 	return tweetModel.AdaptToGqlTweet(tweet), nil
 }
+
+// LikeTweet - Logic to like the tweet
+func LikeTweet(ctx context.Context, id string) (*model.Tweet, error) {
+	user := auth.ForContext(ctx)
+	if user == nil {
+		return nil, errors.New(constants.NotLogged)
+	}
+	tweet, tweetErr := tweetModel.LikeTweet(id, user.ID.Hex())
+	if tweetErr != nil {
+		return nil, tweetErr
+	}
+	return tweetModel.AdaptToGqlTweet(tweet), nil
+}
