@@ -43,13 +43,26 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	MessageOutput struct {
+		Message func(childComplexity int) int
+	}
+
 	Mutation struct {
-		Login    func(childComplexity int, input *model.LoginInput) int
-		Register func(childComplexity int, input *model.RegisterInput) int
+		CreateTweet func(childComplexity int, input model.CreateTweet) int
+		DeleteTweet func(childComplexity int, id string) int
+		Login       func(childComplexity int, input model.LoginInput) int
+		Register    func(childComplexity int, input model.RegisterInput) int
+	}
+
+	PageInfo struct {
+		HasNextPage func(childComplexity int) int
+		PageSize    func(childComplexity int) int
 	}
 
 	Query struct {
-		Me func(childComplexity int) int
+		Me     func(childComplexity int) int
+		Tweet  func(childComplexity int, id string) int
+		Tweets func(childComplexity int, input *model.PaginationInput) int
 	}
 
 	TokenOutput struct {
@@ -63,6 +76,11 @@ type ComplexityRoot struct {
 		User  func(childComplexity int) int
 	}
 
+	TweetsPaginationOutput struct {
+		PageInfo func(childComplexity int) int
+		Tweets   func(childComplexity int) int
+	}
+
 	User struct {
 		Email    func(childComplexity int) int
 		ID       func(childComplexity int) int
@@ -72,11 +90,15 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, input *model.LoginInput) (*model.TokenOutput, error)
-	Register(ctx context.Context, input *model.RegisterInput) (*model.TokenOutput, error)
+	Login(ctx context.Context, input model.LoginInput) (*model.TokenOutput, error)
+	Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error)
+	CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error)
+	DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
+	Tweets(ctx context.Context, input *model.PaginationInput) (*model.TweetsPaginationOutput, error)
+	Tweet(ctx context.Context, id string) (*model.Tweet, error)
 }
 
 type executableSchema struct {
@@ -94,6 +116,37 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "MessageOutput.message":
+		if e.complexity.MessageOutput.Message == nil {
+			break
+		}
+
+		return e.complexity.MessageOutput.Message(childComplexity), true
+
+	case "Mutation.createTweet":
+		if e.complexity.Mutation.CreateTweet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createTweet_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateTweet(childComplexity, args["input"].(model.CreateTweet)), true
+
+	case "Mutation.deleteTweet":
+		if e.complexity.Mutation.DeleteTweet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteTweet_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteTweet(childComplexity, args["id"].(string)), true
+
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -104,7 +157,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["input"].(*model.LoginInput)), true
+		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
 
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
@@ -116,7 +169,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Register(childComplexity, args["input"].(*model.RegisterInput)), true
+		return e.complexity.Mutation.Register(childComplexity, args["input"].(model.RegisterInput)), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
+	case "PageInfo.pageSize":
+		if e.complexity.PageInfo.PageSize == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.PageSize(childComplexity), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -124,6 +191,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.tweet":
+		if e.complexity.Query.Tweet == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tweet_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tweet(childComplexity, args["id"].(string)), true
+
+	case "Query.tweets":
+		if e.complexity.Query.Tweets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tweets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tweets(childComplexity, args["input"].(*model.PaginationInput)), true
 
 	case "TokenOutput.token":
 		if e.complexity.TokenOutput.Token == nil {
@@ -159,6 +250,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tweet.User(childComplexity), true
+
+	case "TweetsPaginationOutput.pageInfo":
+		if e.complexity.TweetsPaginationOutput.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TweetsPaginationOutput.PageInfo(childComplexity), true
+
+	case "TweetsPaginationOutput.tweets":
+		if e.complexity.TweetsPaginationOutput.Tweets == nil {
+			break
+		}
+
+		return e.complexity.TweetsPaginationOutput.Tweets(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -252,7 +357,12 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphqls", Input: `type Tweet {
+	{Name: "graph/schema.graphqls", Input: `type PageInfo {
+  pageSize: Int!
+  hasNextPage: Boolean!
+}
+
+type Tweet {
   id: ID!
   text: String!
   user: User!
@@ -282,17 +392,34 @@ input LoginInput {
   password: String!
 }
 
+input PaginationInput {
+  first: Int!
+}
+
 type TokenOutput {
   token: String!
 }
 
+type MessageOutput {
+  message: String!
+}
+
+type TweetsPaginationOutput {
+  pageInfo: PageInfo!
+  tweets: [Tweet!]!
+}
+
 type Mutation {
-  login(input: LoginInput): TokenOutput
-  register(input: RegisterInput): TokenOutput
+  login(input: LoginInput!): TokenOutput
+  register(input: RegisterInput!): TokenOutput
+  createTweet(input: CreateTweet!): Tweet
+  deleteTweet(id: ID!): MessageOutput
 }
 
 type Query {
   me: User!
+  tweets(input: PaginationInput): TweetsPaginationOutput
+  tweet(id: String!): Tweet
 }
 `, BuiltIn: false},
 }
@@ -302,13 +429,43 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createTweet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.CreateTweet
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNCreateTweet2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐCreateTweet(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteTweet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.LoginInput
+	var arg0 model.LoginInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOLoginInput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalNLoginInput2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐLoginInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -320,10 +477,10 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Mutation_register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.RegisterInput
+	var arg0 model.RegisterInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalORegisterInput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐRegisterInput(ctx, tmp)
+		arg0, err = ec.unmarshalNRegisterInput2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐRegisterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -344,6 +501,36 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tweet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tweets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PaginationInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPaginationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -385,6 +572,41 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _MessageOutput_message(ctx context.Context, field graphql.CollectedField, obj *model.MessageOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MessageOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -410,7 +632,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, args["input"].(*model.LoginInput))
+		return ec.resolvers.Mutation().Login(rctx, args["input"].(model.LoginInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -421,7 +643,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*model.TokenOutput)
 	fc.Result = res
-	return ec.marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐTokenOutput(ctx, field.Selections, res)
+	return ec.marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTokenOutput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -449,7 +671,7 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Register(rctx, args["input"].(*model.RegisterInput))
+		return ec.resolvers.Mutation().Register(rctx, args["input"].(model.RegisterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -460,7 +682,155 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 	}
 	res := resTmp.(*model.TokenOutput)
 	fc.Result = res
-	return ec.marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐTokenOutput(ctx, field.Selections, res)
+	return ec.marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTokenOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createTweet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createTweet_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateTweet(rctx, args["input"].(model.CreateTweet))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Tweet)
+	fc.Result = res
+	return ec.marshalOTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteTweet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteTweet_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteTweet(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MessageOutput)
+	fc.Result = res
+	return ec.marshalOMessageOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐMessageOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_pageSize(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -495,7 +865,85 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_tweets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_tweets_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tweets(rctx, args["input"].(*model.PaginationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TweetsPaginationOutput)
+	fc.Result = res
+	return ec.marshalOTweetsPaginationOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweetsPaginationOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_tweet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_tweet_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tweet(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Tweet)
+	fc.Result = res
+	return ec.marshalOTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -706,7 +1154,7 @@ func (ec *executionContext) _Tweet_user(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Tweet_likes(ctx context.Context, field graphql.CollectedField, obj *model.Tweet) (ret graphql.Marshaler) {
@@ -741,7 +1189,77 @@ func (ec *executionContext) _Tweet_likes(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TweetsPaginationOutput_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.TweetsPaginationOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TweetsPaginationOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TweetsPaginationOutput_tweets(ctx context.Context, field graphql.CollectedField, obj *model.TweetsPaginationOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TweetsPaginationOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tweets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Tweet)
+	fc.Result = res
+	return ec.marshalNTweet2ᚕᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweetᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2019,6 +2537,26 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPaginationInput(ctx context.Context, obj interface{}) (model.PaginationInput, error) {
+	var it model.PaginationInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "first":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+			it.First, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj interface{}) (model.RegisterInput, error) {
 	var it model.RegisterInput
 	var asMap = obj.(map[string]interface{})
@@ -2071,6 +2609,33 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 
 // region    **************************** object.gotpl ****************************
 
+var messageOutputImplementors = []string{"MessageOutput"}
+
+func (ec *executionContext) _MessageOutput(ctx context.Context, sel ast.SelectionSet, obj *model.MessageOutput) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, messageOutputImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MessageOutput")
+		case "message":
+			out.Values[i] = ec._MessageOutput_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2090,6 +2655,42 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_login(ctx, field)
 		case "register":
 			out.Values[i] = ec._Mutation_register(ctx, field)
+		case "createTweet":
+			out.Values[i] = ec._Mutation_createTweet(ctx, field)
+		case "deleteTweet":
+			out.Values[i] = ec._Mutation_deleteTweet(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "pageSize":
+			out.Values[i] = ec._PageInfo_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hasNextPage":
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2128,6 +2729,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "tweets":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tweets(ctx, field)
+				return res
+			})
+		case "tweet":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tweet(ctx, field)
 				return res
 			})
 		case "__type":
@@ -2200,6 +2823,38 @@ func (ec *executionContext) _Tweet(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "likes":
 			out.Values[i] = ec._Tweet_likes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tweetsPaginationOutputImplementors = []string{"TweetsPaginationOutput"}
+
+func (ec *executionContext) _TweetsPaginationOutput(ctx context.Context, sel ast.SelectionSet, obj *model.TweetsPaginationOutput) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tweetsPaginationOutputImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TweetsPaginationOutput")
+		case "pageInfo":
+			out.Values[i] = ec._TweetsPaginationOutput_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tweets":
+			out.Values[i] = ec._TweetsPaginationOutput_tweets(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2516,6 +3171,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateTweet2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐCreateTweet(ctx context.Context, v interface{}) (model.CreateTweet, error) {
+	res, err := ec.unmarshalInputCreateTweet(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2529,6 +3189,41 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {
+	res, err := ec.unmarshalInputLoginInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRegisterInput2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐRegisterInput(ctx context.Context, v interface{}) (model.RegisterInput, error) {
+	res, err := ec.unmarshalInputRegisterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -2546,11 +3241,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNUser2githubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNTweet2ᚕᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweetᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tweet) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2574,7 +3265,7 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋgraph
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalNTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2587,7 +3278,58 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋgraph
 	return ret
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx context.Context, sel ast.SelectionSet, v *model.Tweet) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Tweet(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUser2githubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2850,19 +3592,18 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) unmarshalOLoginInput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (*model.LoginInput, error) {
+func (ec *executionContext) marshalOMessageOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐMessageOutput(ctx context.Context, sel ast.SelectionSet, v *model.MessageOutput) graphql.Marshaler {
 	if v == nil {
-		return nil, nil
+		return graphql.Null
 	}
-	res, err := ec.unmarshalInputLoginInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	return ec._MessageOutput(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalORegisterInput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐRegisterInput(ctx context.Context, v interface{}) (*model.RegisterInput, error) {
+func (ec *executionContext) unmarshalOPaginationInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPaginationInput(ctx context.Context, v interface{}) (*model.PaginationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputRegisterInput(ctx, v)
+	res, err := ec.unmarshalInputPaginationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -2890,11 +3631,25 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return graphql.MarshalString(*v)
 }
 
-func (ec *executionContext) marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋgraphqlᚑgoᚑboilerplateᚋgraphᚋmodelᚐTokenOutput(ctx context.Context, sel ast.SelectionSet, v *model.TokenOutput) graphql.Marshaler {
+func (ec *executionContext) marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTokenOutput(ctx context.Context, sel ast.SelectionSet, v *model.TokenOutput) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._TokenOutput(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTweet2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweet(ctx context.Context, sel ast.SelectionSet, v *model.Tweet) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Tweet(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTweetsPaginationOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTweetsPaginationOutput(ctx context.Context, sel ast.SelectionSet, v *model.TweetsPaginationOutput) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TweetsPaginationOutput(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

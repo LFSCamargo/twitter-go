@@ -57,7 +57,7 @@ func createToken(email string) (string, error) {
 }
 
 // LoginUser - it's the function that check if the user exists
-func LoginUser(user *model.LoginInput) (*model.TokenOutput, error) {
+func LoginUser(user model.LoginInput) (*model.TokenOutput, error) {
 	dbUser, err := userModel.FindByEmail(user.Email)
 	if err != nil {
 		return nil, errors.New(constants.WrongEmailOrPassword)
@@ -85,7 +85,7 @@ func LoginUser(user *model.LoginInput) (*model.TokenOutput, error) {
 }
 
 // RegisterNewUser - it's the function that creates a new db user and returns a jwt token
-func RegisterNewUser(user *model.RegisterInput) (*model.TokenOutput, error) {
+func RegisterNewUser(user model.RegisterInput) (*model.TokenOutput, error) {
 	dbUser, _ := userModel.FindByEmail(user.Email)
 
 	if dbUser != nil {
