@@ -9,7 +9,6 @@ import (
 	"github.com/LFSCamargo/twitter-go/graph/model"
 	"github.com/LFSCamargo/twitter-go/utils/array"
 	"github.com/kamva/mgm/v3"
-	"github.com/kamva/mgm/v3/operator"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -103,7 +102,7 @@ func GetTweet(id string) (*Tweet, error) {
 func GetTweets(limit int) (*model.TweetsPaginationOutput, error) {
 	result := []*Tweet{}
 	first := int64(limit)
-	resulterr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{"age": bson.M{operator.Gt: 24}}, &options.FindOptions{
+	resulterr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{"active": true}, &options.FindOptions{
 		Limit: &first,
 	})
 	if resulterr != nil {
@@ -111,7 +110,7 @@ func GetTweets(limit int) (*model.TweetsPaginationOutput, error) {
 	}
 
 	total := []*Tweet{}
-	totalerr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{})
+	totalerr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{"active": true})
 	if totalerr != nil {
 		return nil, totalerr
 	}
