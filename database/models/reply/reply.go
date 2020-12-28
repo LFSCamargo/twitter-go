@@ -52,7 +52,7 @@ func LikeReply(tweetID string, userID string) (*Reply, error) {
 
 // GetReplies - gets all the replies from a tweet
 func GetReplies(limit int, reference string) (*model.RepliesPaginationOutput, error) {
-	dbReply, err := GetReply(reference)
+	dbReply, err := tweetModel.GetTweet(reference)
 
 	if err != nil {
 		return nil, errors.New(constants.NotFound)

@@ -2,7 +2,6 @@ package tweetModel
 
 import (
 	"errors"
-	"log"
 
 	"github.com/LFSCamargo/twitter-go/constants"
 	userModel "github.com/LFSCamargo/twitter-go/database/models/user"
@@ -120,17 +119,9 @@ func GetTweets(limit int) (*model.TweetsPaginationOutput, error) {
 
 	tweets := []*model.Tweet{}
 
-	log.Printf("Query result")
-
-	log.Print(result)
-
 	for _, tweet := range result {
 		tweets = append(tweets, AdaptToGqlTweet(tweet))
 	}
-
-	log.Printf("Tweets formatted")
-
-	log.Print(tweets)
 
 	return &model.TweetsPaginationOutput{
 		PageInfo: &model.PageInfo{
