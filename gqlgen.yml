@@ -43,6 +43,10 @@ autobind:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
+  Tweet:
+    fields:
+      replies:
+        resolver: true
   ID:
     model:
       - github.com/99designs/gqlgen/graphql.ID

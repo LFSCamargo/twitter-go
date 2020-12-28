@@ -31,15 +31,28 @@ type RegisterInput struct {
 	Username string `json:"username"`
 }
 
+type RepliesPaginationOutput struct {
+	PageInfo *PageInfo `json:"pageInfo"`
+	Replies  []*Reply  `json:"replies"`
+}
+
+type Reply struct {
+	ID    string  `json:"id"`
+	Text  string  `json:"text"`
+	User  *User   `json:"user"`
+	Likes []*User `json:"likes"`
+}
+
 type TokenOutput struct {
 	Token string `json:"token"`
 }
 
 type Tweet struct {
-	ID    string  `json:"id"`
-	Text  string  `json:"text"`
-	User  *User   `json:"user"`
-	Likes []*User `json:"likes"`
+	ID      string                   `json:"id"`
+	Text    string                   `json:"text"`
+	User    *User                    `json:"user"`
+	Likes   []*User                  `json:"likes"`
+	Replies *RepliesPaginationOutput `json:"replies"`
 }
 
 type TweetsPaginationOutput struct {

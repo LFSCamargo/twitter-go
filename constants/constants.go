@@ -1,7 +1,9 @@
 package constants
 
+const ReplyDeleted = "Your reply has been deleted with success"
+
 // TweetDeleted Mutation success message
-const TweetDeleted = "The tweet has been deleted"
+const TweetDeleted = "Your tweet has been deleted with success"
 
 // InsuficientPermissions Error message when a user does not have permissions to do someaction
 const InsuficientPermissions = "Insuficient Permissions"
