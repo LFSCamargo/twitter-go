@@ -1,5 +1,6 @@
 package constants
 
+// ReplyDeleted Mutation success message
 const ReplyDeleted = "Your reply has been deleted with success"
 
 // TweetDeleted Mutation success message
