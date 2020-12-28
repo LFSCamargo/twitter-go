@@ -48,10 +48,11 @@ type TokenOutput struct {
 }
 
 type Tweet struct {
-	ID    string  `json:"id"`
-	Text  string  `json:"text"`
-	User  *User   `json:"user"`
-	Likes []*User `json:"likes"`
+	ID      string                   `json:"id"`
+	Text    string                   `json:"text"`
+	User    *User                    `json:"user"`
+	Likes   []*User                  `json:"likes"`
+	Replies *RepliesPaginationOutput `json:"replies"`
 }
 
 type TweetsPaginationOutput struct {

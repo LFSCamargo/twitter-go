@@ -37,6 +37,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Tweet() TweetResolver
 }
 
 type DirectiveRoot struct {
@@ -48,8 +49,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddReply    func(childComplexity int, input model.CreateTweet) int
-		CreateTweet func(childComplexity int, input model.CreateTweet, tweet string) int
+		AddReply    func(childComplexity int, input model.CreateTweet, tweetID string) int
+		CreateTweet func(childComplexity int, input model.CreateTweet) int
 		DeleteReply func(childComplexity int, input string) int
 		DeleteTweet func(childComplexity int, id string) int
 		LikeTweet   func(childComplexity int, id string) int
@@ -63,11 +64,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Me      func(childComplexity int) int
-		Replies func(childComplexity int, input *model.PaginationInput, id string) int
-		Reply   func(childComplexity int, id string) int
-		Tweet   func(childComplexity int, id string) int
-		Tweets  func(childComplexity int, input *model.PaginationInput) int
+		Me     func(childComplexity int) int
+		Reply  func(childComplexity int, id string) int
+		Tweet  func(childComplexity int, id string) int
+		Tweets func(childComplexity int, input *model.PaginationInput) int
 	}
 
 	RepliesPaginationOutput struct {
@@ -87,10 +87,11 @@ type ComplexityRoot struct {
 	}
 
 	Tweet struct {
-		ID    func(childComplexity int) int
-		Likes func(childComplexity int) int
-		Text  func(childComplexity int) int
-		User  func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Likes   func(childComplexity int) int
+		Replies func(childComplexity int, input *model.PaginationInput) int
+		Text    func(childComplexity int) int
+		User    func(childComplexity int) int
 	}
 
 	TweetsPaginationOutput struct {
@@ -109,18 +110,20 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.TokenOutput, error)
 	Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error)
-	AddReply(ctx context.Context, input model.CreateTweet) (*model.Reply, error)
+	AddReply(ctx context.Context, input model.CreateTweet, tweetID string) (*model.Reply, error)
 	DeleteReply(ctx context.Context, input string) (*model.MessageOutput, error)
-	CreateTweet(ctx context.Context, input model.CreateTweet, tweet string) (*model.Tweet, error)
+	CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error)
 	DeleteTweet(ctx context.Context, id string) (*model.MessageOutput, error)
 	LikeTweet(ctx context.Context, id string) (*model.Tweet, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
-	Replies(ctx context.Context, input *model.PaginationInput, id string) (*model.RepliesPaginationOutput, error)
 	Reply(ctx context.Context, id string) (*model.Reply, error)
 	Tweets(ctx context.Context, input *model.PaginationInput) (*model.TweetsPaginationOutput, error)
 	Tweet(ctx context.Context, id string) (*model.Tweet, error)
+}
+type TweetResolver interface {
+	Replies(ctx context.Context, obj *model.Tweet, input *model.PaginationInput) (*model.RepliesPaginationOutput, error)
 }
 
 type executableSchema struct {
@@ -155,7 +158,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddReply(childComplexity, args["input"].(model.CreateTweet)), true
+		return e.complexity.Mutation.AddReply(childComplexity, args["input"].(model.CreateTweet), args["tweetID"].(string)), true
 
 	case "Mutation.createTweet":
 		if e.complexity.Mutation.CreateTweet == nil {
@@ -167,7 +170,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateTweet(childComplexity, args["input"].(model.CreateTweet), args["tweet"].(string)), true
+		return e.complexity.Mutation.CreateTweet(childComplexity, args["input"].(model.CreateTweet)), true
 
 	case "Mutation.deleteReply":
 		if e.complexity.Mutation.DeleteReply == nil {
@@ -249,18 +252,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
-
-	case "Query.replies":
-		if e.complexity.Query.Replies == nil {
-			break
-		}
-
-		args, err := ec.field_Query_replies_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Replies(childComplexity, args["input"].(*model.PaginationInput), args["id"].(string)), true
 
 	case "Query.reply":
 		if e.complexity.Query.Reply == nil {
@@ -360,6 +351,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tweet.Likes(childComplexity), true
+
+	case "Tweet.replies":
+		if e.complexity.Tweet.Replies == nil {
+			break
+		}
+
+		args, err := ec.field_Tweet_replies_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tweet.Replies(childComplexity, args["input"].(*model.PaginationInput)), true
 
 	case "Tweet.text":
 		if e.complexity.Tweet.Text == nil {
@@ -498,6 +501,7 @@ type Tweet {
   text: String!
   user: User!
   likes: [User!]!
+  replies(input: PaginationInput): RepliesPaginationOutput
 }
 
 type User {
@@ -548,16 +552,15 @@ type RepliesPaginationOutput {
 type Mutation {
   login(input: LoginInput!): TokenOutput
   register(input: RegisterInput!): TokenOutput
-  addReply(input: CreateTweet!): Reply
+  addReply(input: CreateTweet!, tweetID: ID!): Reply
   deleteReply(input: ID!): MessageOutput
-  createTweet(input: CreateTweet!, tweet: ID!): Tweet
+  createTweet(input: CreateTweet!): Tweet
   deleteTweet(id: ID!): MessageOutput
   likeTweet(id: ID!): Tweet
 }
 
 type Query {
   me: User!
-  replies(input: PaginationInput, id: ID!): RepliesPaginationOutput
   reply(id: String!): Reply
   tweets(input: PaginationInput): TweetsPaginationOutput
   tweet(id: String!): Tweet
@@ -582,6 +585,15 @@ func (ec *executionContext) field_Mutation_addReply_args(ctx context.Context, ra
 		}
 	}
 	args["input"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["tweetID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tweetID"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tweetID"] = arg1
 	return args, nil
 }
 
@@ -597,15 +609,6 @@ func (ec *executionContext) field_Mutation_createTweet_args(ctx context.Context,
 		}
 	}
 	args["input"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["tweet"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tweet"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["tweet"] = arg1
 	return args, nil
 }
 
@@ -699,30 +702,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_replies_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.PaginationInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPaginationInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_reply_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -754,6 +733,21 @@ func (ec *executionContext) field_Query_tweet_args(ctx context.Context, rawArgs 
 }
 
 func (ec *executionContext) field_Query_tweets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PaginationInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐPaginationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Tweet_replies_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *model.PaginationInput
@@ -944,7 +938,7 @@ func (ec *executionContext) _Mutation_addReply(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddReply(rctx, args["input"].(model.CreateTweet))
+		return ec.resolvers.Mutation().AddReply(rctx, args["input"].(model.CreateTweet), args["tweetID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1022,7 +1016,7 @@ func (ec *executionContext) _Mutation_createTweet(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateTweet(rctx, args["input"].(model.CreateTweet), args["tweet"].(string))
+		return ec.resolvers.Mutation().CreateTweet(rctx, args["input"].(model.CreateTweet))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1217,45 +1211,6 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_replies(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_replies_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Replies(rctx, args["input"].(*model.PaginationInput), args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.RepliesPaginationOutput)
-	fc.Result = res
-	return ec.marshalORepliesPaginationOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐRepliesPaginationOutput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_reply(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1829,6 +1784,45 @@ func (ec *executionContext) _Tweet_likes(ctx context.Context, field graphql.Coll
 	res := resTmp.([]*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tweet_replies(ctx context.Context, field graphql.CollectedField, obj *model.Tweet) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Tweet",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Tweet_replies_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tweet().Replies(rctx, obj, args["input"].(*model.PaginationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RepliesPaginationOutput)
+	fc.Result = res
+	return ec.marshalORepliesPaginationOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐRepliesPaginationOutput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TweetsPaginationOutput_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.TweetsPaginationOutput) (ret graphql.Marshaler) {
@@ -3376,17 +3370,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "replies":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_replies(ctx, field)
-				return res
-			})
 		case "reply":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3550,23 +3533,34 @@ func (ec *executionContext) _Tweet(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Tweet_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "text":
 			out.Values[i] = ec._Tweet_text(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "user":
 			out.Values[i] = ec._Tweet_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "likes":
 			out.Values[i] = ec._Tweet_likes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "replies":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tweet_replies(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
