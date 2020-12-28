@@ -24,7 +24,8 @@ func main() {
 	}
 
 	logger := httplog.NewLogger("twitter-go-logging", httplog.Options{
-		JSON: true,
+		JSON:    true,
+		Concise: true,
 	})
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
