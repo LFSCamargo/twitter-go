@@ -43,6 +43,10 @@ func (r *mutationResolver) LikeTweet(ctx context.Context, id string) (*model.Twe
 	return tweets.LikeTweet(ctx, id)
 }
 
+func (r *mutationResolver) LikeReply(ctx context.Context, id string) (*model.Reply, error) {
+	return reply.LikeReply(ctx, id)
+}
+
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	user := auth.ForContext(ctx)
 	if user == nil {
@@ -84,5 +88,3 @@ func (r *Resolver) Tweet() generated.TweetResolver { return &tweetResolver{r} }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type tweetResolver struct{ *Resolver }
-
-type replyResolver struct{ *Resolver }

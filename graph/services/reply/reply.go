@@ -80,3 +80,19 @@ func GetReply(ctx context.Context, replyID string) (*model.Reply, error) {
 
 	return replyModel.AdaptToGqlReply(reply), nil
 }
+
+// LikeReply - likes a reply from a tweet
+func LikeReply(ctx context.Context, replyID string) (*model.Reply, error) {
+	user := auth.ForContext(ctx)
+	if user == nil {
+		return nil, errors.New(constants.NotFound)
+	}
+
+	reply, err := replyModel.LikeReply(replyID, user.ID.Hex())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return replyModel.AdaptToGqlReply(reply), nil
+}

@@ -71,6 +71,7 @@ type Mutation {
   createTweet(input: CreateTweet!): Tweet
   deleteTweet(id: ID!): MessageOutput
   likeTweet(id: ID!): Tweet
+  likeReply(id: ID!): Reply
 }
 
 type Query {
