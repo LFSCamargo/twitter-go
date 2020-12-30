@@ -101,7 +101,9 @@ func GetTweet(id string) (*Tweet, error) {
 func GetTweets(limit int) (*model.TweetsPaginationOutput, error) {
 	result := []*Tweet{}
 	first := int64(limit)
-	resulterr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{"active": true}, &options.FindOptions{
+	resulterr := mgm.Coll(&Tweet{
+		Active: true,
+	}).SimpleFind(&result, bson.M{"active": true}, &options.FindOptions{
 		Limit: &first,
 	})
 	if resulterr != nil {
@@ -109,7 +111,9 @@ func GetTweets(limit int) (*model.TweetsPaginationOutput, error) {
 	}
 
 	total := []*Tweet{}
-	totalerr := mgm.Coll(&Tweet{}).SimpleFind(&result, bson.M{"active": true})
+	totalerr := mgm.Coll(&Tweet{
+		Active: true,
+	}).SimpleFind(&result, bson.M{"active": true})
 	if totalerr != nil {
 		return nil, totalerr
 	}
