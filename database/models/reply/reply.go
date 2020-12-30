@@ -60,7 +60,9 @@ func GetReplies(limit int, reference string) (*model.RepliesPaginationOutput, er
 
 	result := []*Reply{}
 	first := int64(limit)
-	resultErr := mgm.Coll(&Reply{}).SimpleFind(
+	resultErr := mgm.Coll(&Reply{
+		Reference: dbReply.ID.Hex(),
+	}).SimpleFind(
 		&result,
 		bson.M{"reference": dbReply.ID.Hex()},
 		&options.FindOptions{
@@ -71,7 +73,9 @@ func GetReplies(limit int, reference string) (*model.RepliesPaginationOutput, er
 		return nil, resultErr
 	}
 	total := []*Reply{}
-	totalerr := mgm.Coll(&Reply{}).SimpleFind(&result, bson.M{})
+	totalerr := mgm.Coll(&Reply{
+		Reference: dbReply.ID.Hex(),
+	}).SimpleFind(&result, bson.M{"reference": dbReply.ID.Hex()})
 	if totalerr != nil {
 		return nil, totalerr
 	}
