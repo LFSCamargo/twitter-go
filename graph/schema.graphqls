@@ -20,9 +20,11 @@ type Tweet {
 
 type User {
   id: ID!
+  nickname: String
+  bio: String
   username: String!
   email: String!
-  picture: String!
+  picture: String
 }
 
 input CreateTweet {
@@ -32,8 +34,13 @@ input CreateTweet {
 input RegisterInput {
   email: String!
   password: String!
-  picture: String!
   username: String!
+}
+
+input UpdateProfileInput {
+  picture: String
+  bio: String
+  nickname: String
 }
 
 input LoginInput {
@@ -66,6 +73,7 @@ type RepliesPaginationOutput {
 type Mutation {
   login(input: LoginInput!): TokenOutput
   register(input: RegisterInput!): TokenOutput
+  updateProfile(input: UpdateProfileInput): User
   addReply(input: CreateTweet!, tweetID: ID!): Reply
   deleteReply(input: ID!): MessageOutput
   createTweet(input: CreateTweet!): Tweet
@@ -75,8 +83,9 @@ type Mutation {
 }
 
 type Query {
+  getUser(id: ID!): User
   me: User!
-  reply(id: String!): Reply
+  reply(id: ID!): Reply
   tweets(input: PaginationInput): TweetsPaginationOutput
-  tweet(id: String!): Tweet
+  tweet(id: ID!): Tweet
 }

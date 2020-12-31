@@ -49,14 +49,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddReply    func(childComplexity int, input model.CreateTweet, tweetID string) int
-		CreateTweet func(childComplexity int, input model.CreateTweet) int
-		DeleteReply func(childComplexity int, input string) int
-		DeleteTweet func(childComplexity int, id string) int
-		LikeReply   func(childComplexity int, id string) int
-		LikeTweet   func(childComplexity int, id string) int
-		Login       func(childComplexity int, input model.LoginInput) int
-		Register    func(childComplexity int, input model.RegisterInput) int
+		AddReply      func(childComplexity int, input model.CreateTweet, tweetID string) int
+		CreateTweet   func(childComplexity int, input model.CreateTweet) int
+		DeleteReply   func(childComplexity int, input string) int
+		DeleteTweet   func(childComplexity int, id string) int
+		LikeReply     func(childComplexity int, id string) int
+		LikeTweet     func(childComplexity int, id string) int
+		Login         func(childComplexity int, input model.LoginInput) int
+		Register      func(childComplexity int, input model.RegisterInput) int
+		UpdateProfile func(childComplexity int, input *model.UpdateProfileInput) int
 	}
 
 	PageInfo struct {
@@ -65,10 +66,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Me     func(childComplexity int) int
-		Reply  func(childComplexity int, id string) int
-		Tweet  func(childComplexity int, id string) int
-		Tweets func(childComplexity int, input *model.PaginationInput) int
+		GetUser func(childComplexity int, id string) int
+		Me      func(childComplexity int) int
+		Reply   func(childComplexity int, id string) int
+		Tweet   func(childComplexity int, id string) int
+		Tweets  func(childComplexity int, input *model.PaginationInput) int
 	}
 
 	RepliesPaginationOutput struct {
@@ -101,8 +103,10 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		Bio      func(childComplexity int) int
 		Email    func(childComplexity int) int
 		ID       func(childComplexity int) int
+		Nickname func(childComplexity int) int
 		Picture  func(childComplexity int) int
 		Username func(childComplexity int) int
 	}
@@ -111,6 +115,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.TokenOutput, error)
 	Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error)
+	UpdateProfile(ctx context.Context, input *model.UpdateProfileInput) (*model.User, error)
 	AddReply(ctx context.Context, input model.CreateTweet, tweetID string) (*model.Reply, error)
 	DeleteReply(ctx context.Context, input string) (*model.MessageOutput, error)
 	CreateTweet(ctx context.Context, input model.CreateTweet) (*model.Tweet, error)
@@ -119,6 +124,7 @@ type MutationResolver interface {
 	LikeReply(ctx context.Context, id string) (*model.Reply, error)
 }
 type QueryResolver interface {
+	GetUser(ctx context.Context, id string) (*model.User, error)
 	Me(ctx context.Context) (*model.User, error)
 	Reply(ctx context.Context, id string) (*model.Reply, error)
 	Tweets(ctx context.Context, input *model.PaginationInput) (*model.TweetsPaginationOutput, error)
@@ -246,6 +252,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Register(childComplexity, args["input"].(model.RegisterInput)), true
 
+	case "Mutation.updateProfile":
+		if e.complexity.Mutation.UpdateProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateProfile_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateProfile(childComplexity, args["input"].(*model.UpdateProfileInput)), true
+
 	case "PageInfo.hasNextPage":
 		if e.complexity.PageInfo.HasNextPage == nil {
 			break
@@ -259,6 +277,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.PageSize(childComplexity), true
+
+	case "Query.getUser":
+		if e.complexity.Query.GetUser == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetUser(childComplexity, args["id"].(string)), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -406,6 +436,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TweetsPaginationOutput.Tweets(childComplexity), true
 
+	case "User.bio":
+		if e.complexity.User.Bio == nil {
+			break
+		}
+
+		return e.complexity.User.Bio(childComplexity), true
+
 	case "User.email":
 		if e.complexity.User.Email == nil {
 			break
@@ -419,6 +456,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.ID(childComplexity), true
+
+	case "User.nickname":
+		if e.complexity.User.Nickname == nil {
+			break
+		}
+
+		return e.complexity.User.Nickname(childComplexity), true
 
 	case "User.picture":
 		if e.complexity.User.Picture == nil {
@@ -520,9 +564,11 @@ type Tweet {
 
 type User {
   id: ID!
+  nickname: String
+  bio: String
   username: String!
   email: String!
-  picture: String!
+  picture: String
 }
 
 input CreateTweet {
@@ -532,8 +578,13 @@ input CreateTweet {
 input RegisterInput {
   email: String!
   password: String!
-  picture: String!
   username: String!
+}
+
+input UpdateProfileInput {
+  picture: String
+  bio: String
+  nickname: String
 }
 
 input LoginInput {
@@ -566,6 +617,7 @@ type RepliesPaginationOutput {
 type Mutation {
   login(input: LoginInput!): TokenOutput
   register(input: RegisterInput!): TokenOutput
+  updateProfile(input: UpdateProfileInput): User
   addReply(input: CreateTweet!, tweetID: ID!): Reply
   deleteReply(input: ID!): MessageOutput
   createTweet(input: CreateTweet!): Tweet
@@ -575,10 +627,11 @@ type Mutation {
 }
 
 type Query {
+  getUser(id: ID!): User
   me: User!
-  reply(id: String!): Reply
+  reply(id: ID!): Reply
   tweets(input: PaginationInput): TweetsPaginationOutput
-  tweet(id: String!): Tweet
+  tweet(id: ID!): Tweet
 }
 `, BuiltIn: false},
 }
@@ -717,6 +770,21 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UpdateProfileInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUpdateProfileInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUpdateProfileInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -732,13 +800,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_reply_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -753,7 +836,7 @@ func (ec *executionContext) field_Query_tweet_args(ctx context.Context, rawArgs 
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -941,6 +1024,45 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 	res := resTmp.(*model.TokenOutput)
 	fc.Result = res
 	return ec.marshalOTokenOutput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐTokenOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateProfile_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateProfile(rctx, args["input"].(*model.UpdateProfileInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addReply(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1245,6 +1367,45 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetUser(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1999,6 +2160,70 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_nickname(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nickname, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_bio(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _User_username(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2094,14 +2319,11 @@ func (ec *executionContext) _User_picture(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -3281,19 +3503,47 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 			if err != nil {
 				return it, err
 			}
-		case "picture":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("picture"))
-			it.Picture, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "username":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context, obj interface{}) (model.UpdateProfileInput, error) {
+	var it model.UpdateProfileInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "picture":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("picture"))
+			it.Picture, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bio":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bio"))
+			it.Bio, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "nickname":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickname"))
+			it.Nickname, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3357,6 +3607,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_login(ctx, field)
 		case "register":
 			out.Values[i] = ec._Mutation_register(ctx, field)
+		case "updateProfile":
+			out.Values[i] = ec._Mutation_updateProfile(ctx, field)
 		case "addReply":
 			out.Values[i] = ec._Mutation_addReply(ctx, field)
 		case "deleteReply":
@@ -3427,6 +3679,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "getUser":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getUser(ctx, field)
+				return res
+			})
 		case "me":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3691,6 +3954,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "nickname":
+			out.Values[i] = ec._User_nickname(ctx, field, obj)
+		case "bio":
+			out.Values[i] = ec._User_bio(ctx, field, obj)
 		case "username":
 			out.Values[i] = ec._User_username(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3703,9 +3970,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "picture":
 			out.Values[i] = ec._User_picture(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4517,6 +4781,21 @@ func (ec *executionContext) marshalOTweetsPaginationOutput2ᚖgithubᚗcomᚋLFS
 		return graphql.Null
 	}
 	return ec._TweetsPaginationOutput(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUpdateProfileInput2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v interface{}) (*model.UpdateProfileInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUpdateProfileInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋLFSCamargoᚋtwitterᚑgoᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

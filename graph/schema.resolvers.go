@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/LFSCamargo/twitter-go/auth"
+	"github.com/LFSCamargo/twitter-go/constants"
 	"github.com/LFSCamargo/twitter-go/graph/generated"
 	"github.com/LFSCamargo/twitter-go/graph/model"
 	"github.com/LFSCamargo/twitter-go/graph/services/reply"
@@ -21,6 +22,14 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.TokenOutput, error) {
 	return user.RegisterNewUser(input)
+}
+
+func (r *mutationResolver) UpdateProfile(ctx context.Context, input *model.UpdateProfileInput) (*model.User, error) {
+	userFromCTX := auth.ForContext(ctx)
+	if userFromCTX == nil {
+		return nil, errors.New(constants.NotLogged)
+	}
+	return user.UpdateProfile(ctx, input, userFromCTX.ID.Hex())
 }
 
 func (r *mutationResolver) AddReply(ctx context.Context, input model.CreateTweet, tweetID string) (*model.Reply, error) {
@@ -45,6 +54,14 @@ func (r *mutationResolver) LikeTweet(ctx context.Context, id string) (*model.Twe
 
 func (r *mutationResolver) LikeReply(ctx context.Context, id string) (*model.Reply, error) {
 	return reply.LikeReply(ctx, id)
+}
+
+func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
+	userFromCTX := auth.ForContext(ctx)
+	if userFromCTX == nil {
+		return nil, errors.New(constants.NotLogged)
+	}
+	return user.GetUserFromID(ctx, id)
 }
 
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {

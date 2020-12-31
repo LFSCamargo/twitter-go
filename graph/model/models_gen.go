@@ -27,7 +27,6 @@ type PaginationInput struct {
 type RegisterInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Picture  string `json:"picture"`
 	Username string `json:"username"`
 }
 
@@ -60,9 +59,17 @@ type TweetsPaginationOutput struct {
 	Tweets   []*Tweet  `json:"tweets"`
 }
 
+type UpdateProfileInput struct {
+	Picture  *string `json:"picture"`
+	Bio      *string `json:"bio"`
+	Nickname *string `json:"nickname"`
+}
+
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Picture  string `json:"picture"`
+	ID       string  `json:"id"`
+	Nickname *string `json:"nickname"`
+	Bio      *string `json:"bio"`
+	Username string  `json:"username"`
+	Email    string  `json:"email"`
+	Picture  *string `json:"picture"`
 }

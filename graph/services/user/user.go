@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"os"
 	"time"
@@ -106,4 +107,26 @@ func RegisterNewUser(user model.RegisterInput) (*model.TokenOutput, error) {
 	return &model.TokenOutput{
 		Token: token,
 	}, nil
+}
+
+// UpdateProfile - Update user profile logic
+func UpdateProfile(ctx context.Context, input *model.UpdateProfileInput, userID string) (*model.User, error) {
+	dbUser, updateErr := userModel.UpdateProfile(input, userID)
+
+	if updateErr != nil {
+		return nil, errors.New(constants.InternalServerError)
+	}
+
+	return userModel.AdaptUserModelToGql(dbUser), nil
+}
+
+// GetUserFromID - Gets the user by the input as an id
+func GetUserFromID(ctx context.Context, id string) (*model.User, error) {
+	dbUser, findErr := userModel.FindByID(id)
+
+	if findErr != nil {
+		return nil, errors.New(constants.NotFound)
+	}
+
+	return userModel.AdaptUserModelToGql(dbUser), nil
 }
