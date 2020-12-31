@@ -13,6 +13,7 @@ import (
 	"github.com/LFSCamargo/twitter-go/graph/generated"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/httplog"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8000"
@@ -38,9 +39,11 @@ func main() {
 	router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", srv)
 
+	handler := cors.Default().Handler(router)
+
 	log.Printf("Server exposed at http://localhost:%s/graphql", port)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	err := http.ListenAndServe(":"+port, router)
+	err := http.ListenAndServe(":"+port, handler)
 
 	if err != nil {
 		panic(err)
