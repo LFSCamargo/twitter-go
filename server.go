@@ -34,16 +34,19 @@ func main() {
 	database.Connect()
 
 	router := chi.NewRouter()
+	router.Use(cors.New(cors.Options{
+		AllowCredentials: true,
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		Debug:            true,
+	}).Handler)
 	router.Use(httplog.RequestLogger(logger))
 	router.Use(auth.Middleware())
 	router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", srv)
 
-	handler := cors.Default().Handler(router)
-
 	log.Printf("Server exposed at http://localhost:%s/graphql", port)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	err := http.ListenAndServe(":"+port, handler)
+	err := http.ListenAndServe(":"+port, router)
 
 	if err != nil {
 		panic(err)
